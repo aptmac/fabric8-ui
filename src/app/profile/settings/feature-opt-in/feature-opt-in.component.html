@@ -6,6 +6,11 @@
           <h2 class="card-pf-title">Feature Opt-In</h2>
         </div>
       </div>
+      <div *ngIf="featureUrl">
+        <button class="btn btn-primary" (click)="routeToFeature()">
+          Return To Feature
+        </button>
+      </div>
       <div class="row">
         <pfng-list
           [config]="listConfig"

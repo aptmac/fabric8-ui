@@ -1,8 +1,10 @@
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Router } from '@angular/router';
 import { Notifications, NotificationType } from 'ngx-base';
 import { Feature, FeatureTogglesService } from 'ngx-feature-flag';
 import { UserService } from 'ngx-login-client';
 import { ListComponent, ListConfig, ListEvent } from 'patternfly-ng';
+import { Subscription } from 'rxjs';
 import { first } from 'rxjs/operators';
 import { FeatureAcknowledgementService } from '../../../feature-flag/service/feature-acknowledgement.service';
 import { ExtProfile, ExtUser, GettingStartedService } from '../../../getting-started/services/getting-started.service';
@@ -27,7 +29,9 @@ export class FeatureOptInComponent implements OnInit {
 
   @ViewChild(ListComponent) listComponent: ListComponent;
 
-  featureLevel: string;
+  public featureLevel: string;
+  public featureUrl: string;
+  private subscriptions: Subscription[] = [];
   listConfig: ListConfig;
   state: boolean;
 
@@ -38,7 +42,8 @@ export class FeatureOptInComponent implements OnInit {
     private readonly notifications: Notifications,
     private readonly userService: UserService,
     private readonly toggleService: FeatureTogglesService,
-    private readonly toggleServiceAck: FeatureAcknowledgementService
+    private readonly toggleServiceAck: FeatureAcknowledgementService,
+    private readonly router: Router
   ) {
     this.listConfig = {
       dblClick: false,
@@ -98,6 +103,8 @@ export class FeatureOptInComponent implements OnInit {
       this.state = state;
     });
     this.featureLevel = (this.userService.currentLoggedInUser.attributes as ExtProfile).featureLevel;
+    this.featureUrl = this.toggleServiceAck.getFeatureUrl();
+    this.toggleServiceAck.resetFeatureUrl();
     this.items = [
       {
         name: 'released',
@@ -198,6 +205,12 @@ export class FeatureOptInComponent implements OnInit {
       beta,
       released
     };
+  }
+
+  routeToFeature(): void {
+    if (this.featureUrl) {
+      this.router.navigateByUrl(this.featureUrl);
+    }
   }
 
 }

@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { EventEmitter, Inject, Injectable, OnDestroy } from '@angular/core';
+import { Event, Router, RoutesRecognized } from '@angular/router';
 import { cloneDeep } from 'lodash';
 import { Logger } from 'ngx-base';
 import { WIT_API_URL } from 'ngx-fabric8-wit';
@@ -8,20 +9,44 @@ import { Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ExtProfile, ExtUser, GettingStartedService } from '../../getting-started/services/getting-started.service';
 
+const FEATURE_OPT_IN_PATH: string = '/_featureflag';
+
 /**
  * A service to manage the user acknowledgement to dismiss the warning displayed by the experimental feature banner
  */
 @Injectable()
 export class FeatureAcknowledgementService extends GettingStartedService implements OnDestroy {
   protected subscriptions: Subscription[] = [];
+  private currentUrl: string;
+  private prevUrl: string;
+  private featureUrl: string;
   showIconChanged = new EventEmitter();
   constructor(
     protected auth: AuthenticationService,
     protected http: HttpClient,
     protected logger: Logger,
     protected userService: UserService,
+    private router: Router,
     @Inject(WIT_API_URL) apiUrl: string) {
     super(auth, http, logger, userService, apiUrl);
+    this.currentUrl = this.router.url;
+    this.router.events.subscribe((routerEvent: Event): void => {
+      if (routerEvent instanceof RoutesRecognized) {
+        if (routerEvent.url.startsWith(FEATURE_OPT_IN_PATH)) {
+          this.featureUrl = this.prevUrl;
+        }
+        this.currentUrl = routerEvent.url;
+        this.prevUrl = this.currentUrl;
+      }
+    });
+  }
+
+  getFeatureUrl(): string {
+    return this.featureUrl;
+  }
+
+  resetFeatureUrl(): void {
+    this.featureUrl = undefined;
   }
 
   ngOnDestroy(): void {
